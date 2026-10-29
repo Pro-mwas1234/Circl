@@ -6,14 +6,27 @@ export async function POST(request: Request) {
   try {
     const { email, username } = await request.json();
 
-    const targetEmail = email || `user_${Date.now()}@google.com`;
-    let targetUsername = username || `google_user_${Math.floor(1000 + Math.random() * 9000)}`;
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email is required for Google authentication' },
+        { status: 400 }
+      );
+    }
 
     let user = await prisma.user.findUnique({
-      where: { email: targetEmail },
+      where: { email },
     });
 
+    if (user && user.provider !== 'google') {
+      return NextResponse.json(
+        { error: 'This email is associated with password authentication. Please log in with email/password.' },
+        { status: 400 }
+      );
+    }
+
     if (!user) {
+      let targetUsername = username || `google_user_${Math.floor(1000 + Math.random() * 9000)}`;
+
       const existingUsername = await prisma.user.findUnique({
         where: { username: targetUsername },
       });
@@ -23,7 +36,7 @@ export async function POST(request: Request) {
 
       user = await prisma.user.create({
         data: {
-          email: targetEmail,
+          email,
           username: targetUsername,
           provider: 'google',
           avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUsername}`,

@@ -42,10 +42,30 @@ export async function POST(
       });
     }
 
+    const now = new Date();
+
+    // Mark any expired active sessions as completed
+    await prisma.session.updateMany({
+      where: {
+        circleId: circle.id,
+        status: 'active',
+        endTime: {
+          lt: now,
+        },
+      },
+      data: {
+        status: 'completed',
+      },
+    });
+
+    // Find currently active, non-expired session
     let session = await prisma.session.findFirst({
       where: {
         circleId: circle.id,
         status: 'active',
+        endTime: {
+          gt: now,
+        },
       },
       include: {
         participants: {
@@ -57,7 +77,6 @@ export async function POST(
     });
 
     if (!session) {
-      const now = new Date();
       const endTime = new Date(now.getTime() + circle.durationMins * 60 * 1000);
 
       session = await prisma.session.create({
