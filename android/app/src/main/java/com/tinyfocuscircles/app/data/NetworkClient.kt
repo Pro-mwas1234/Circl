@@ -13,6 +13,11 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+data class CircleResponse(
+    val circle: CircleDto? = null,
+    val error: String? = null
+)
+
 interface ApiService {
     @GET("api/auth/me")
     suspend fun getMe(): AuthResponse
@@ -33,7 +38,7 @@ interface ApiService {
     suspend fun getCircles(@Query("mode") mode: String? = null): CirclesResponse
 
     @POST("api/circles")
-    suspend fun createCircle(@Body request: CreateCircleRequest): AuthResponse
+    suspend fun createCircle(@Body request: CreateCircleRequest): CircleResponse
 
     @POST("api/circles/{id}/session")
     suspend fun joinOrCreateSession(@Path("id") circleId: String): SessionResponse
